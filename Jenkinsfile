@@ -30,7 +30,10 @@ pipeline {
         sh 'docker push "${FULL_IMAGE}"'
       }
     }
+
     stage('Deploy HOT') {
+      agent { docker { image 'bitnami/kubectl:1.30'
+                       args '--add-host=host.docker.internal:host-gateway' } }
       steps {
         withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-hot']) {
           sh '''
@@ -44,7 +47,10 @@ pipeline {
         }
       }
     }
+
     stage('Deploy STANDBY') {
+      agent { docker { image 'bitnami/kubectl:1.30'
+                       args '--add-host=host.docker.internal:host-gateway' } }
       steps {
         withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-standby']) {
           sh '''
@@ -58,7 +64,6 @@ pipeline {
         }
       }
     }
-
+  }
 }
-
 
