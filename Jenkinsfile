@@ -1,5 +1,6 @@
 pipeline {
   agent any
+
   environment {
     REGISTRY_HOST = 'localhost:5001'
     IMAGE_NAME    = "${env.IMAGE_NAME ?: 'python-backend'}"
@@ -8,8 +9,11 @@ pipeline {
     HOT_CONTEXT   = "kind-hot"
     STBY_CONTEXT  = "kind-standby"
   }
+
+  stages {
+
     stage('Unit Tests') {
-      agent { docker { image 'python:3.12-slim' } }
+      agent { docker { image 'python:3.12-slim'; reuseNode true } }
       steps {
         sh '''
           set -e
@@ -17,14 +21,13 @@ pipeline {
           . .venv/bin/activate
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-          # if you don't have pytest.ini (pythonpath=.), uncomment next line
-          # export PYTHONPATH="$PWD"
+          # export PYTHONPATH="$PWD"   # uncomment if tests can't import app/
           pytest -q
         '''
       }
     }
 
-    stage('Build & Push'){
+    stage('Build & Push') {
       steps {
         sh 'docker build -t "${FULL_IMAGE}" .'
         sh 'docker push "${FULL_IMAGE}"'
@@ -32,10 +35,9 @@ pipeline {
     }
 
     stage('Deploy HOT') {
-      agent { docker { image 'dtzar/helm-kubectl:3.14.4'
-                       args '--add-host=host.docker.internal:host-gateway' } }
+      agent { docker { image 'dtzar/helm-kubectl:3.14.4'; args '--add-host=host.docker.internal:host-gateway'; reuseNode true } }
       steps {
-        withKubeConfig([credentialsId: 'kubernetes-config', contextName: "${HOT_CONTEXT}"]) {
+        withKubeConfig(credentialsId: 'kubernetes-config', contextName: "${HOT_CONTEXT}") {
           sh '''
             set -e
             echo "KUBECONFIG=$KUBECONFIG"
@@ -55,10 +57,9 @@ pipeline {
     }
 
     stage('Deploy STANDBY') {
-      agent { docker { image 'dtzar/helm-kubectl:3.14.4'
-                       args '--add-host=host.docker.internal:host-gateway' } }
+      agent { docker { image 'dtzar/helm-kubectl:3.14.4'; args '--add-host=host.docker.internal:host-gateway'; reuseNode true } }
       steps {
-        withKubeConfig([credentialsId: 'kubernetes-config', contextName: "${STBY_CONTEXT}"]) {
+        withKubeConfig(credentialsId: 'kubernetes-config', contextName: "${STBY_CONTEXT}") {
           sh '''
             set -e
             echo "KUBECONFIG=$KUBECONFIG"
@@ -76,6 +77,7 @@ pipeline {
         }
       }
     }
+
   }
 }
 
