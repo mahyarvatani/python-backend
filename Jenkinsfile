@@ -30,33 +30,35 @@ pipeline {
         sh 'docker push "${FULL_IMAGE}"'
       }
     }
-
-    stage('Deploy HOT'){ /* unchanged */ 
+    stage('Deploy HOT') {
       steps {
-        sh '''
-          kubectl --context "${HOT_CONTEXT}" apply -f k8s/ns.yaml
-          kubectl --context "${HOT_CONTEXT}" apply -f k8s/service.yaml
-          kubectl --context "${HOT_CONTEXT}" apply -f k8s/ingress.yaml
-          kubectl --context "${HOT_CONTEXT}" -n apps apply -f k8s/deployment.yaml || true
-          kubectl --context "${HOT_CONTEXT}" -n apps set image deploy/backend backend="${FULL_IMAGE}"
-          kubectl --context "${HOT_CONTEXT}" -n apps rollout status deploy/backend --timeout=120s
-        '''
+        withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-hot']) {
+          sh '''
+            kubectl apply -f k8s/ns.yaml
+            kubectl apply -f k8s/service.yaml
+            kubectl apply -f k8s/ingress.yaml
+            kubectl -n apps apply -f k8s/deployment.yaml || true
+            kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
+            kubectl -n apps rollout status deploy/backend --timeout=120s
+          '''
+        }
+      }
+    }
+    stage('Deploy STANDBY') {
+      steps {
+        withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-standby']) {
+          sh '''
+            kubectl apply -f k8s/ns.yaml
+            kubectl apply -f k8s/service.yaml
+            kubectl apply -f k8s/ingress.yaml
+            kubectl -n apps apply -f k8s/deployment.yaml || true
+            kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
+            kubectl -n apps rollout status deploy/backend --timeout=120s
+          '''
+        }
       }
     }
 
-    stage('Deploy STANDBY'){ /* unchanged */ 
-      steps {
-        sh '''
-          kubectl --context "${STBY_CONTEXT}" apply -f k8s/ns.yaml
-          kubectl --context "${STBY_CONTEXT}" apply -f k8s/service.yaml
-          kubectl --context "${STBY_CONTEXT}" apply -f k8s/ingress.yaml
-          kubectl --context "${STBY_CONTEXT}" -n apps apply -f k8s/deployment.yaml || true
-          kubectl --context "${STBY_CONTEXT}" -n apps set image deploy/backend backend="${FULL_IMAGE}"
-          kubectl --context "${STBY_CONTEXT}" -n apps rollout status deploy/backend --timeout=120s
-        '''
-      }
-    }
-  }
 }
 
 
