@@ -8,9 +8,6 @@ pipeline {
     HOT_CONTEXT   = "kind-hot"
     STBY_CONTEXT  = "kind-standby"
   }
-  stages {
-    stage('Checkout'){ steps { checkout scm } }
-
     stage('Unit Tests') {
       agent { docker { image 'python:3.12-slim' } }
       steps {
