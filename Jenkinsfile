@@ -15,10 +15,13 @@ pipeline {
       agent { docker { image 'python:3.12-slim' } }
       steps {
         sh '''
+          set -e
           python -m venv .venv
           . .venv/bin/activate
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
+          # if you don't have pytest.ini (pythonpath=.), uncomment next line
+          # export PYTHONPATH="$PWD"
           pytest -q
         '''
       }
@@ -30,51 +33,52 @@ pipeline {
         sh 'docker push "${FULL_IMAGE}"'
       }
     }
-stage('Deploy HOT') {
-  agent { docker { image 'dtzar/helm-kubectl:3.14.4'
-                   args '--add-host=host.docker.internal:host-gateway' } }
-  steps {
-    withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-hot']) {
-      sh '''
-        set -e
-        echo "KUBECONFIG=$KUBECONFIG"
-        kubectl config current-context
-        kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'; echo
-        kubectl get nodes
 
-        kubectl apply -f k8s/ns.yaml
-        kubectl apply -f k8s/service.yaml
-        kubectl apply -f k8s/ingress.yaml
-        kubectl -n apps apply -f k8s/deployment.yaml || true
-        kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
-        kubectl -n apps rollout status deploy/backend --timeout=120s
-      '''
+    stage('Deploy HOT') {
+      agent { docker { image 'dtzar/helm-kubectl:3.14.4'
+                       args '--add-host=host.docker.internal:host-gateway' } }
+      steps {
+        withKubeConfig([credentialsId: 'kubernetes-config', contextName: "${HOT_CONTEXT}"]) {
+          sh '''
+            set -e
+            echo "KUBECONFIG=$KUBECONFIG"
+            kubectl config current-context
+            kubectl config view --minify -o jsonpath="{.clusters[0].cluster.server}"; echo
+            kubectl get nodes
+
+            kubectl apply -f k8s/ns.yaml
+            kubectl apply -f k8s/service.yaml
+            kubectl apply -f k8s/ingress.yaml
+            kubectl -n apps apply -f k8s/deployment.yaml || true
+            kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
+            kubectl -n apps rollout status deploy/backend --timeout=120s
+          '''
+        }
+      }
+    }
+
+    stage('Deploy STANDBY') {
+      agent { docker { image 'dtzar/helm-kubectl:3.14.4'
+                       args '--add-host=host.docker.internal:host-gateway' } }
+      steps {
+        withKubeConfig([credentialsId: 'kubernetes-config', contextName: "${STBY_CONTEXT}"]) {
+          sh '''
+            set -e
+            echo "KUBECONFIG=$KUBECONFIG"
+            kubectl config current-context
+            kubectl config view --minify -o jsonpath="{.clusters[0].cluster.server}"; echo
+            kubectl get nodes
+
+            kubectl apply -f k8s/ns.yaml
+            kubectl apply -f k8s/service.yaml
+            kubectl apply -f k8s/ingress.yaml
+            kubectl -n apps apply -f k8s/deployment.yaml || true
+            kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
+            kubectl -n apps rollout status deploy/backend --timeout=120s
+          '''
+        }
+      }
     }
   }
-}
-
-stage('Deploy HOT') {
-  agent { docker { image 'dtzar/helm-kubectl:3.14.4'
-                   args '--add-host=host.docker.internal:host-gateway' } }
-  steps {
-    withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-standby']) {
-      sh '''
-        set -e
-        echo "KUBECONFIG=$KUBECONFIG"
-        kubectl config current-context
-        kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'; echo
-        kubectl get nodes
-
-        kubectl apply -f k8s/ns.yaml
-        kubectl apply -f k8s/service.yaml
-        kubectl apply -f k8s/ingress.yaml
-        kubectl -n apps apply -f k8s/deployment.yaml || true
-        kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
-        kubectl -n apps rollout status deploy/backend --timeout=120s
-      '''
-    }
-  }
-}
-}
 }
 
