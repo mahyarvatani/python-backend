@@ -1,0 +1,66 @@
+# ---- Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+*.egg-info/
+.eggs/
+dist/
+build/
+pip-wheel-metadata/
+*.log
+
+# ---- Virtualenvs
+.venv/
+venv/
+ENV/
+env/
+app/.venv/
+
+# ---- Tests / tooling
+.pytest_cache/
+.coverage*
+htmlcov/
+.tox/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# ---- Env / secrets (keep out of git)
+.env
+.env.*
+.envrc
+.kube/
+*.kubeconfig
+*.pem
+*.key
+*.crt
+*.jks
+
+# ---- Editors / OS
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*~
+.DS_Store
+Thumbs.db
+*Zone.Identifier*
+
+# ---- Docker / Compose (local-only stuff)
+docker-compose.override.yml
+registry-data/
+registry/auth/
+**/auth/htpasswd
+
+# ---- Jenkins (local controller data)
+jenkins_home/
+JenkinsHome/
+
+# ---- Kind / generated configs
+kind-configs/
+
+# ---- Misc binaries/archives
+*.zip
+

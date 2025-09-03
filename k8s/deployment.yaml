@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: apps
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: backend } }
+  template:
+    metadata: { labels: { app: backend } }
+    spec:
+      containers:
+      - name: backend
+        image: REPLACEME_IMAGE
+        env:
+        - name: APP_VERSION
+          value: "REPLACEME_VERSION"
+        - name: CLUSTER_NAME
+          valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+        ports: [{ containerPort: 8080, name: http }]
+        readinessProbe: { httpGet: { path: /healthz, port: http } }
+        livenessProbe:  { httpGet: { path: /healthz, port: http } }
