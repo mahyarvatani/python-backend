@@ -36,11 +36,12 @@ stage('Deploy HOT') {
   steps {
     withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-hot']) {
       sh '''
-  echo "KUBECONFIG=$KUBECONFIG"
-  kubectl config current-context
-  kubectl config view --minify -o jsonpath="{.clusters[0].cluster.server}{\\n}"
-'''
-      sh '''
+        set -e
+        echo "KUBECONFIG=$KUBECONFIG"
+        kubectl config current-context
+        kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'; echo
+        kubectl get nodes
+
         kubectl apply -f k8s/ns.yaml
         kubectl apply -f k8s/service.yaml
         kubectl apply -f k8s/ingress.yaml
@@ -52,12 +53,18 @@ stage('Deploy HOT') {
   }
 }
 
-stage('Deploy STANDBY') {
+stage('Deploy HOT') {
   agent { docker { image 'dtzar/helm-kubectl:3.14.4'
                    args '--add-host=host.docker.internal:host-gateway' } }
   steps {
     withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-standby']) {
       sh '''
+        set -e
+        echo "KUBECONFIG=$KUBECONFIG"
+        kubectl config current-context
+        kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'; echo
+        kubectl get nodes
+
         kubectl apply -f k8s/ns.yaml
         kubectl apply -f k8s/service.yaml
         kubectl apply -f k8s/ingress.yaml
