@@ -75,6 +75,6 @@ stage('Deploy HOT') {
     }
   }
 }
-
+}
 }
 
