@@ -30,40 +30,41 @@ pipeline {
         sh 'docker push "${FULL_IMAGE}"'
       }
     }
-
-    stage('Deploy HOT') {
-      agent { docker { image 'bitnami/kubectl:1.30'
-                       args '--add-host=host.docker.internal:host-gateway' } }
-      steps {
-        withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-hot']) {
-          sh '''
-            kubectl apply -f k8s/ns.yaml
-            kubectl apply -f k8s/service.yaml
-            kubectl apply -f k8s/ingress.yaml
-            kubectl -n apps apply -f k8s/deployment.yaml || true
-            kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
-            kubectl -n apps rollout status deploy/backend --timeout=120s
-          '''
-        }
-      }
+stage('Deploy HOT') {
+  agent { docker { image 'lachlanevenson/k8s-kubectl:v1.30.4'
+                   args '--add-host=host.docker.internal:host-gateway' } }
+  steps {
+    withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-hot']) {
+      sh '''
+        kubectl apply -f k8s/ns.yaml
+        kubectl apply -f k8s/service.yaml
+        kubectl apply -f k8s/ingress.yaml
+        kubectl -n apps apply -f k8s/deployment.yaml || true
+        kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
+        kubectl -n apps rollout status deploy/backend --timeout=120s
+      '''
     }
+  }
+}
 
-    stage('Deploy STANDBY') {
-      agent { docker { image 'bitnami/kubectl:1.30'
-                       args '--add-host=host.docker.internal:host-gateway' } }
-      steps {
-        withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-standby']) {
-          sh '''
-            kubectl apply -f k8s/ns.yaml
-            kubectl apply -f k8s/service.yaml
-            kubectl apply -f k8s/ingress.yaml
-            kubectl -n apps apply -f k8s/deployment.yaml || true
-            kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
-            kubectl -n apps rollout status deploy/backend --timeout=120s
-          '''
-        }
-      }
+stage('Deploy STANDBY') {
+  agent { docker { image 'lachlanevenson/k8s-kubectl:v1.30.4'
+                   args '--add-host=host.docker.internal:host-gateway' } }
+  steps {
+    withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-standby']) {
+      sh '''
+        kubectl apply -f k8s/ns.yaml
+        kubectl apply -f k8s/service.yaml
+        kubectl apply -f k8s/ingress.yaml
+        kubectl -n apps apply -f k8s/deployment.yaml || true
+        kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
+        kubectl -n apps rollout status deploy/backend --timeout=120s
+      '''
     }
+  }
+}
+
+
   }
 }
 
