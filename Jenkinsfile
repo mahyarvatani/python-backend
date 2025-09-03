@@ -36,6 +36,11 @@ stage('Deploy HOT') {
   steps {
     withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-hot']) {
       sh '''
+  echo "KUBECONFIG=$KUBECONFIG"
+  kubectl config current-context
+  kubectl config view --minify -o jsonpath="{.clusters[0].cluster.server}{\\n}"
+'''
+      sh '''
         kubectl apply -f k8s/ns.yaml
         kubectl apply -f k8s/service.yaml
         kubectl apply -f k8s/ingress.yaml
