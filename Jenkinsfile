@@ -11,9 +11,16 @@ pipeline {
   stages {
     stage('Checkout'){ steps { checkout scm } }
 
-    stage('Unit Tests'){
+    stage('Unit Tests') {
+      agent { docker { image 'python:3.12-slim' } }
       steps {
-        sh 'python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt && pytest -q'
+        sh '''
+          python -m venv .venv
+          . .venv/bin/activate
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pytest -q
+        '''
       }
     }
 
@@ -24,11 +31,10 @@ pipeline {
       }
     }
 
-    stage('Deploy HOT'){
+    stage('Deploy HOT'){ /* unchanged */ 
       steps {
         sh '''
           kubectl --context "${HOT_CONTEXT}" apply -f k8s/ns.yaml
-          # no regcred needed
           kubectl --context "${HOT_CONTEXT}" apply -f k8s/service.yaml
           kubectl --context "${HOT_CONTEXT}" apply -f k8s/ingress.yaml
           kubectl --context "${HOT_CONTEXT}" -n apps apply -f k8s/deployment.yaml || true
@@ -38,7 +44,7 @@ pipeline {
       }
     }
 
-    stage('Deploy STANDBY'){
+    stage('Deploy STANDBY'){ /* unchanged */ 
       steps {
         sh '''
           kubectl --context "${STBY_CONTEXT}" apply -f k8s/ns.yaml
@@ -52,5 +58,4 @@ pipeline {
     }
   }
 }
-
 
