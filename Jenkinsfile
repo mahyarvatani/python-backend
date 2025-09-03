@@ -31,7 +31,7 @@ pipeline {
       }
     }
 stage('Deploy HOT') {
-  agent { docker { image 'lachlanevenson/k8s-kubectl:v1.30.4'
+  agent { docker { image 'dtzar/helm-kubectl:3.14.4'
                    args '--add-host=host.docker.internal:host-gateway' } }
   steps {
     withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-hot']) {
@@ -48,7 +48,7 @@ stage('Deploy HOT') {
 }
 
 stage('Deploy STANDBY') {
-  agent { docker { image 'lachlanevenson/k8s-kubectl:v1.30.4'
+  agent { docker { image 'dtzar/helm-kubectl:3.14.4'
                    args '--add-host=host.docker.internal:host-gateway' } }
   steps {
     withKubeConfig([credentialsId: 'kubernetes-config', contextName: 'kind-standby']) {
@@ -63,7 +63,6 @@ stage('Deploy STANDBY') {
     }
   }
 }
-
 
   }
 }
