@@ -56,23 +56,23 @@ pipeline {
       reuseNode true
     }
   }
-  steps {
-    sh '''
-      set -e
-      mkdir -p trivy
 
-      echo "Scanning ${FULL_IMAGE} ..."
+script {
+  int rc = sh(
+    script: '''
       trivy image --timeout 5m --ignore-unfixed \
         --severity HIGH,CRITICAL \
         --exit-code 1 \
-        --format table "${FULL_IMAGE}" 
-    '''
-    if (code != 0) {
-        echo 'Vulnerabilities found — marking build UNSTABLE, continuing.'
-        currentBuild.result = 'UNSTABLE'
-      }
+        --format table "${FULL_IMAGE}"
+    ''',
+    returnStatus: true
+  )
+  if (rc != 0) {
+    echo 'Vulnerabilities found — marking build UNSTABLE, continuing.'
+    currentBuild.result = 'UNSTABLE'
   }
 }
+
 }
     stage('Push Image') {
       steps {
