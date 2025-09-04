@@ -48,7 +48,7 @@ pipeline {
       }
     }
 
-    stage('Trivy Scan') {
+stage('Trivy Scan') {
   agent {
     docker {
       image 'aquasec/trivy:0.53.0'
@@ -56,24 +56,32 @@ pipeline {
       reuseNode true
     }
   }
-
-script {
-  int rc = sh(
-    script: '''
-      trivy image --timeout 5m --ignore-unfixed \
-        --severity HIGH,CRITICAL \
-        --exit-code 1 \
-        --format table "${FULL_IMAGE}"
-    ''',
-    returnStatus: true
-  )
-  if (rc != 0) {
-    echo 'Vulnerabilities found — marking build UNSTABLE, continuing.'
-    currentBuild.result = 'UNSTABLE'
+  steps {
+    script {
+      sh 'mkdir -p trivy'
+      echo "Scanning ${env.FULL_IMAGE} ..."
+      int rc = sh(
+        script: '''
+          set -e
+          trivy image --timeout 5m --ignore-unfixed \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --format table "${FULL_IMAGE}"
+        ''',
+        returnStatus: true
+      )
+      if (rc != 0) {
+        echo 'Vulnerabilities found — marking build UNSTABLE, continuing.'
+        currentBuild.result = 'UNSTABLE'
+      }
+    }
   }
 }
 
-}
+
+
+
+
     stage('Push Image') {
       steps {
         sh 'docker push "${FULL_IMAGE}"'
