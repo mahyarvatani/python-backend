@@ -67,6 +67,10 @@ pipeline {
         --exit-code 1 \
         --format table "${FULL_IMAGE}" 
     '''
+    if (code != 0) {
+        echo 'Vulnerabilities found — marking build UNSTABLE, continuing.'
+        currentBuild.result = 'UNSTABLE'
+      }
   }
 }
 
