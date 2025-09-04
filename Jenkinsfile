@@ -49,23 +49,26 @@ pipeline {
     }
 
     stage('Trivy Scan') {
-      agent {
-        docker {
-          image 'aquasec/trivy:0.53.0'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-          reuseNode true
-        }
-      }
-      steps {
-        sh '''
-          set -e
-          mkdir -p trivy
-          trivy image --timeout 5m --ignore-unfixed \
-            --severity HIGH,CRITICAL --exit-code 1 \
-            --format table "${FULL_IMAGE}"
-        '''
-      }
+  agent {
+    docker {
+      image 'aquasec/trivy:0.53.0'
+      args '--entrypoint= -v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE/.trivy:/root/.cache/trivy'
+      reuseNode true
     }
+  }
+  steps {
+    sh '''
+      set -e
+      mkdir -p trivy
+
+      echo "Scanning ${FULL_IMAGE} ..."
+      trivy image --timeout 5m --ignore-unfixed \
+        --severity HIGH,CRITICAL \
+        --exit-code 1 \
+        --format table "${FULL_IMAGE}" 
+    '''
+  }
+}
 
     stage('Push Image') {
       steps {
