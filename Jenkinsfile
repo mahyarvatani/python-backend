@@ -47,10 +47,9 @@ pipeline {
 
             kubectl apply -f k8s/ns.yaml
             kubectl apply -f k8s/service.yaml
-            kubectl apply -f k8s/ingress.yaml
-            kubectl -n apps apply -f k8s/deployment.yaml || true
-            kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
-            kubectl -n apps rollout status deploy/backend --timeout=120s
+            kubectl -n python-backend apply -f k8s/deployment.yaml || true
+            kubectl -n python-backend set image deploy/backend backend="${FULL_IMAGE}"
+            kubectl -n python-backend rollout status deploy/backend --timeout=120s
           '''
         }
       }
@@ -69,10 +68,9 @@ pipeline {
 
             kubectl apply -f k8s/ns.yaml
             kubectl apply -f k8s/service.yaml
-            kubectl apply -f k8s/ingress.yaml
-            kubectl -n apps apply -f k8s/deployment.yaml || true
-            kubectl -n apps set image deploy/backend backend="${FULL_IMAGE}"
-            kubectl -n apps rollout status deploy/backend --timeout=120s
+            kubectl -n python-backend apply -f k8s/deployment.yaml || true
+            kubectl -n python-backend set image deploy/backend backend="${FULL_IMAGE}"
+            kubectl -n python-backend rollout status deploy/backend --timeout=120s
           '''
         }
       }

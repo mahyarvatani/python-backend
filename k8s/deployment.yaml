@@ -2,21 +2,41 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
-  namespace: apps
+  namespace: python-backend
 spec:
-  replicas: 2
-  selector: { matchLabels: { app: backend } }
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
   template:
-    metadata: { labels: { app: backend } }
+    metadata:
+      labels:
+        app: backend
     spec:
       containers:
       - name: backend
         image: REPLACEME_IMAGE
+        imagePullPolicy: IfNotPresent
         env:
         - name: APP_VERSION
           value: "REPLACEME_VERSION"
         - name: CLUSTER_NAME
-          valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
-        ports: [{ containerPort: 8080, name: http }]
-        readinessProbe: { httpGet: { path: /healthz, port: http } }
-        livenessProbe:  { httpGet: { path: /healthz, port: http } }
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        ports:
+        - name: http
+          containerPort: 8888
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 2
+          periodSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
