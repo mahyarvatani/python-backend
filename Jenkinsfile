@@ -26,6 +26,22 @@ pipeline {
         '''
       }
     }
+    
+    stage('SonarQube Analysis') {
+  steps {
+    withSonarQubeEnv('sonar_server') {
+      sh '''
+        sonar-scanner \
+          -Dsonar.projectKey=python-backend \
+          -Dsonar.sources=app \
+          -Dsonar.tests=tests \
+          -Dsonar.python.version=3.12 \
+          -Dsonar.coverageReportPaths=coverage.xml
+      '''
+    }
+  }
+}
+
 
     stage('Build & Push') {
       steps {
