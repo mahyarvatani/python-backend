@@ -35,8 +35,7 @@ pipeline {
           -Dsonar.projectKey=python-backend \
           -Dsonar.sources=app \
           -Dsonar.tests=tests \
-          -Dsonar.python.version=3.12 \
-          -Dsonar.coverageReportPaths=coverage.xml
+          -Dsonar.python.version=3.12
       '''
     }
   }
