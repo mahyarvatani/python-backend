@@ -40,7 +40,11 @@ pipeline {
         withKubeConfig(credentialsId: 'kubernetes-config', contextName: "${HOT_CONTEXT}") {
           sh '''
             set -e
-            echo "KUBECONFIG=$KUBECONFIG"
+            
+            kubectl config set-cluster kind-hot \
+               --server="https://host.docker.internal:6444" \
+               --insecure-skip-tls-verify=true
+
             kubectl config current-context
             kubectl config view --minify -o jsonpath="{.clusters[0].cluster.server}"; echo
             kubectl get nodes
@@ -61,7 +65,10 @@ pipeline {
         withKubeConfig(credentialsId: 'kubernetes-config', contextName: "${STBY_CONTEXT}") {
           sh '''
             set -e
-            echo "KUBECONFIG=$KUBECONFIG"
+            kubectl config set-cluster kind-standby \
+               --server="https://host.docker.internal:7444" \
+               --insecure-skip-tls-verify=true
+
             kubectl config current-context
             kubectl config view --minify -o jsonpath="{.clusters[0].cluster.server}"; echo
             kubectl get nodes
