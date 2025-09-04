@@ -42,12 +42,37 @@ pipeline {
 }
 
 
-    stage('Build & Push') {
+    stage('Build Image') {
       steps {
         sh 'docker build -t "${FULL_IMAGE}" .'
+      }
+    }
+
+    stage('Trivy Scan') {
+      agent {
+        docker {
+          image 'aquasec/trivy:0.53.0'
+          args '-v /var/run/docker.sock:/var/run/docker.sock'
+          reuseNode true
+        }
+      }
+      steps {
+        sh '''
+          set -e
+          mkdir -p trivy
+          trivy image --timeout 5m --ignore-unfixed \
+            --severity HIGH,CRITICAL --exit-code 1 \
+            --format table "${FULL_IMAGE}"
+        '''
+      }
+    }
+
+    stage('Push Image') {
+      steps {
         sh 'docker push "${FULL_IMAGE}"'
       }
     }
+
 
     stage('Deploy HOT') {
       agent { docker { image 'dtzar/helm-kubectl:3.14.4'; args '--add-host=host.docker.internal:host-gateway'; reuseNode true } }
