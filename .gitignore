@@ -62,5 +62,5 @@ JenkinsHome/
 kind-configs/
 
 # ---- Misc binaries/archives
-*.zip
+#*.zip
 
